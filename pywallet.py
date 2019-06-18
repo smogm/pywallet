@@ -72,7 +72,7 @@ import os.path
 import platform
 
 max_version = 81000
-addrtype = 0
+addrtype = 33 # set default to ECC
 json_db = {}
 private_keys = []
 private_hex_keys = []
@@ -84,6 +84,7 @@ aversions = {};
 for i in range(256):
 	aversions[i] = "version %d" % i;
 aversions[0] = 'Bitcoin';
+aversions[33] = 'Eccoin';
 aversions[48] = 'Litecoin';
 aversions[52] = 'Namecoin';
 aversions[111] = 'Testnet';
@@ -2056,6 +2057,7 @@ def parse_wallet(db, item_callback):
 				d["tx_id"] = inversetxid(kds.read_bytes(32).encode('hex_codec'))
 				start = vds.read_cursor
 				d['version'] = vds.read_int32()
+				d['time'] = vds.read_uint32()
 				n_vin = vds.read_compact_size()
 				d['txIn'] = []
 				for i in xrange(n_vin):
@@ -2065,6 +2067,8 @@ def parse_wallet(db, item_callback):
 				for i in xrange(n_vout):
 					d['txOut'].append(parse_TxOut(vds))
 				d['lockTime'] = vds.read_uint32()
+				if d['version'] > 1:
+					vds.read_bytes(32)
 				d['tx'] = vds.input[start:vds.read_cursor].encode('hex_codec')
 				d['txv'] = value.encode('hex_codec')
 				d['txk'] = key.encode('hex_codec')
@@ -2107,7 +2111,7 @@ def parse_wallet(db, item_callback):
 				d['otherAccount'] = vds.read_string()
 				d['comment'] = vds.read_string()
 			elif type == "bestblock":
-				d['nVersion'] = vds.read_int32()
+				#d['nVersion'] = vds.read_int32() # not used in ECC?
 				d.update(parse_BlockLocator(vds))
 			elif type == "ckey":
 				d['public_key'] = kds.read_bytes(kds.read_compact_size())
@@ -5041,7 +5045,6 @@ if __name__ == '__main__':
 				print "Bad private key"
 
 			db.close()
-
 
 
 
